@@ -1,11 +1,22 @@
 import {Button} from "@/components/ui/button.tsx";
 import {ThemeProvider} from "@/components/theme-provider.tsx";
-import {useState} from "react";
+import {useRef, useState} from "react";
 import Countdown from "@/components/Countdown.tsx";
+import CursorTracker, {CursorData} from "@/components/CursorTracker.tsx";
+import AimAssist from "@/components/AimAssist.tsx";
 
 function App() {
 
-    const [showCountdown, setShowCountdown] = useState(false)
+    const [cursorData, setCursorData] = useState<CursorData>({ x: 0, y: 0, vx: 0, vy: 0 });
+    const [showCountdown, setShowCountdown] = useState(false);
+
+    const buttonRefs = [
+        { id: "home", ref: useRef<HTMLButtonElement>(null) },
+        { id: "about", ref: useRef<HTMLButtonElement>(null) },
+        { id: "services", ref: useRef<HTMLButtonElement>(null) },
+        { id: "contact", ref: useRef<HTMLButtonElement>(null) },
+        { id: "go-up", ref:useRef<HTMLButtonElement>(null) },
+    ];
 
     return (
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
@@ -13,11 +24,11 @@ function App() {
                 <div className="w-full flex justify-between items-center">
                     <h1 className="text-2xl font-bold uppercase">Logo</h1>
                     <nav className="flex space-x-4">
-                        <Button variant="link">Home</Button>
-                        <Button variant="link">About</Button>
-                        <Button variant="link">Services</Button>
+                        <Button ref={buttonRefs[0].ref} variant="link">Home</Button>
+                        <Button ref={buttonRefs[1].ref} variant="link">About</Button>
+                        <Button ref={buttonRefs[2].ref} variant="link">Services</Button>
                     </nav>
-                    <Button>
+                    <Button ref={buttonRefs[3].ref}>
                         Contact
                     </Button>
                 </div>
@@ -29,11 +40,15 @@ function App() {
                     onMouseEnter={() => setShowCountdown(true)}
                     onMouseLeave={() => setShowCountdown(false)}
                 ></div>
-                <Button>
-                    Bottom
+                <Button ref={buttonRefs[4].ref}>
+                    Go up
                 </Button>
             </div>
             {showCountdown && <Countdown initialTime={3}/>}
+            <div className="w-full h-screen flex items-center justify-center">
+                <CursorTracker onMove={setCursorData}/>
+                <AimAssist cursorData={cursorData} buttons={buttonRefs}/>
+            </div>
         </ThemeProvider>
     )
 }
