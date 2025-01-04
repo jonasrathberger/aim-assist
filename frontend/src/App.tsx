@@ -15,9 +15,27 @@ export type Task = {
     action2: Action;
 }
 
-async function logTaskTiming(task: Task, startTime: number, endTime: number) {
-    console.log(`Task: ${task.action1.actionName} -> ${task.action2.actionName}`);
-}
+const logTaskTiming = async (task, startTime, endTime) => {
+    const logEntry = {
+        action1Name: task.action1.actionName,
+        action2Name: task.action2.actionName,
+        startTime,
+        endTime,
+        duration: (endTime - startTime).toFixed(2),
+    };
+
+    try {
+        await fetch('http://localhost:3000/api/logs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(logEntry),
+        });
+    } catch (error) {
+        console.error('Failed to log task:', error);
+    }
+};
 
 function App() {
 
