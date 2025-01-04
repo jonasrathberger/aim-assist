@@ -7,15 +7,17 @@ import AimAssist from "@/components/AimAssist.tsx";
 
 function App() {
 
-    const [cursorData, setCursorData] = useState<CursorData>({ x: 0, y: 0, vx: 0, vy: 0 });
+    const [cursorData, setCursorData] = useState<CursorData>({x: 0, y: 0, vx: 0, vy: 0});
     const [showCountdown, setShowCountdown] = useState(false);
 
     const buttonRefs = [
-        { id: "home", ref: useRef<HTMLButtonElement>(null) },
-        { id: "about", ref: useRef<HTMLButtonElement>(null) },
-        { id: "services", ref: useRef<HTMLButtonElement>(null) },
-        { id: "contact", ref: useRef<HTMLButtonElement>(null) },
-        { id: "go-up", ref:useRef<HTMLButtonElement>(null) },
+        {id: "home", content: "Home", ref: useRef<HTMLButtonElement>(null)},
+        {id: "about", content: "About", ref: useRef<HTMLButtonElement>(null)},
+        {id: "services", content: "Services", ref: useRef<HTMLButtonElement>(null)},
+        {id: "blog", content: "Blog", ref: useRef<HTMLButtonElement>(null)},
+        {id: "contact", content: "Contact", ref: useRef<HTMLButtonElement>(null)},
+        {id: "go-up", content: "Go up", ref: useRef<HTMLButtonElement>(null)},
+        {id: "see-more", content: "See more", ref: useRef<HTMLButtonElement>(null)}
     ];
 
     return (
@@ -24,13 +26,12 @@ function App() {
                 <div className="w-full flex justify-between items-center">
                     <h1 className="text-2xl font-bold uppercase">Logo</h1>
                     <nav className="flex space-x-4">
-                        <Button ref={buttonRefs[0].ref} variant="link">Home</Button>
-                        <Button ref={buttonRefs[1].ref} variant="link">About</Button>
-                        <Button ref={buttonRefs[2].ref} variant="link">Services</Button>
+                        <Button ref={buttonRefs[0].ref} variant="link">{buttonRefs[0].content}</Button>
+                        <Button ref={buttonRefs[1].ref} variant="link">{buttonRefs[1].content}</Button>
+                        <Button ref={buttonRefs[2].ref} variant="link">{buttonRefs[2].content}</Button>
+                        <Button ref={buttonRefs[3].ref} variant="link">{buttonRefs[3].content}</Button>
+                        <Button ref={buttonRefs[4].ref} variant="link">{buttonRefs[4].content}</Button>
                     </nav>
-                    <Button ref={buttonRefs[3].ref}>
-                        Contact
-                    </Button>
                 </div>
             </header>
             <div className="w-full h-screen flex flex-col items-center justify-between p-8">
@@ -40,9 +41,14 @@ function App() {
                     onMouseEnter={() => setShowCountdown(true)}
                     onMouseLeave={() => setShowCountdown(false)}
                 ></div>
-                <Button ref={buttonRefs[4].ref}>
-                    Go up
-                </Button>
+                <div className="flex flex-col gap-4">
+                    <Button ref={buttonRefs[5].ref}>
+                        {buttonRefs[5].content}
+                    </Button>
+                    <Button ref={buttonRefs[6].ref} variant="outline">
+                        {buttonRefs[6].content}
+                    </Button>
+                </div>
             </div>
             {showCountdown && <Countdown initialTime={3}/>}
             <div className="w-full h-screen flex items-center justify-center">

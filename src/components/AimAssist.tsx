@@ -15,6 +15,7 @@ const AimAssist = ({ cursorData, buttons }: AimAssistProps) => {
     const [highlightedButton, setHighlightedButton] = useState<string | null>(null);
     const [predictedPosition, setPredictedPosition] = useState({ x: 0, y: 0 });
     const predictionRef = useRef({ x: 0, y: 0 });
+    const lastHighlightedButtonRef = useRef<string | null>(null);
 
     const findHighlightedButton = useCallback(() => {
         const predictionTime = 0.2;
@@ -24,48 +25,57 @@ const AimAssist = ({ cursorData, buttons }: AimAssistProps) => {
         const predictedX = cursorData.x + cursorData.vx * predictionTime;
         const predictedY = cursorData.y + cursorData.vy * predictionTime;
 
-        // Find target button
-        const targetButton = buttons.find(({ ref }) => {
+        // Find the nearest target button
+        let closestButton: string | null = null;
+        let minDistance = Infinity;
+
+        buttons.forEach(({ id, ref }) => {
             const button = ref.current;
-            if (!button) return false;
+            if (!button) return;
 
             const rect = button.getBoundingClientRect();
-            const isWithinX = predictedX >= rect.left - tolerance && predictedX <= rect.right + tolerance;
-            const isWithinY = predictedY >= rect.top - tolerance && predictedY <= rect.bottom + tolerance;
+            const dx = Math.max(rect.left - predictedX, 0, predictedX - rect.right);
+            const dy = Math.max(rect.top - predictedY, 0, predictedY - rect.bottom);
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-            return isWithinX && isWithinY;
+            if (distance < tolerance && distance < minDistance) {
+                minDistance = distance;
+                closestButton = id;
+            }
         });
 
-        return targetButton ? targetButton.id : null;
+        return closestButton || lastHighlightedButtonRef.current;
     }, [cursorData, buttons]);
 
     useEffect(() => {
-        const smoothingFactor = 0.1; // Adjust for desired smoothness
+        const baseSmoothing = 0.1;
+        const velocityFactor = Math.min(Math.max(Math.abs(cursorData.vx) + Math.abs(cursorData.vy), 0.5), 2);
+        const smoothingFactor = baseSmoothing / velocityFactor;
+
         const predictionTime = 0.2;
 
-        // More advanced smoothing prediction
+        // Smooth prediction
         const predictedX = cursorData.x + cursorData.vx * predictionTime;
         const predictedY = cursorData.y + cursorData.vy * predictionTime;
 
-        // Smooth interpolation
         predictionRef.current = {
             x: predictionRef.current.x + smoothingFactor * (predictedX - predictionRef.current.x),
             y: predictionRef.current.y + smoothingFactor * (predictedY - predictionRef.current.y)
         };
 
-        // Update predicted position
         setPredictedPosition({
             x: predictionRef.current.x,
             y: predictionRef.current.y
         });
 
-        // Find and set highlighted button
         const newHighlightedButton = findHighlightedButton();
+        if (newHighlightedButton) {
+            lastHighlightedButtonRef.current = newHighlightedButton;
+        }
         setHighlightedButton(newHighlightedButton);
     }, [cursorData, findHighlightedButton]);
 
     useEffect(() => {
-        // Modify button styles
         buttons.forEach(({ id, ref }) => {
             const button = ref.current;
             if (button) {
@@ -73,19 +83,19 @@ const AimAssist = ({ cursorData, buttons }: AimAssistProps) => {
                     button.classList.add('bg-destructive', 'text-destructive-foreground');
                     button.classList.remove('bg-primary', 'text-primary-foreground', 'hover:bg-primary/90');
                 } else {
-                    //button.classList.remove('bg-destructive', 'text-destructive-foreground');
-                    //button.classList.add('bg-primary', 'text-primary-foreground', 'hover:bg-primary/90');
+                    button.classList.remove('bg-destructive', 'text-destructive-foreground');
+                    button.classList.add('bg-primary', 'text-primary-foreground', 'hover:bg-primary/90');
                 }
             }
         });
 
-        // Cleanup function to remove classes
+        // Cleanup function
         return () => {
             buttons.forEach(({ ref }) => {
                 const button = ref.current;
                 if (button) {
-                    //button.classList.remove('bg-destructive', 'text-destructive-foreground');
-                    //button.classList.add('bg-primary', 'text-primary-foreground', 'hover:bg-primary/90');
+                    button.classList.remove('bg-destructive', 'text-destructive-foreground');
+                    button.classList.add('bg-primary', 'text-primary-foreground', 'hover:bg-primary/90');
                 }
             });
         };
