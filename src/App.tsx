@@ -1,14 +1,65 @@
 import {Button} from "@/components/ui/button.tsx";
 import {ThemeProvider} from "@/components/theme-provider.tsx";
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import Countdown from "@/components/Countdown.tsx";
 import CursorTracker, {CursorData} from "@/components/CursorTracker.tsx";
 import AimAssist from "@/components/AimAssist.tsx";
 
+type Action = {
+    actionId: string;
+    actionName: string;
+}
+
+export type Task = {
+    action1: Action;
+    action2: Action;
+}
+
+async function logTaskTiming(task: Task, startTime: number, endTime: number) {
+    console.log(`Task: ${task.action1.actionName} -> ${task.action2.actionName}`);
+}
+
 function App() {
 
+    const initialTime = 3;
     const [cursorData, setCursorData] = useState<CursorData>({x: 0, y: 0, vx: 0, vy: 0});
     const [showCountdown, setShowCountdown] = useState(false);
+    const [time, setTime] = useState(initialTime);
+    const [task, setTask] = useState<Task | null>(null);
+    const [taskStartTime, setTaskStartTime] = useState<number | null>(null);
+    const [step, setStep] = useState<number>(0); // 0 = not started, 1 = first action, 2 = second action
+
+    // Countdown timer
+    useEffect(() => {
+        if (time <= 0 && !task) {
+            const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
+            setTask(randomTask);
+            setTaskStartTime(Date.now() / 1000);
+        }
+
+        if (time <= 0) return;
+
+        const interval = setInterval(() => {
+            setTime((prevTime) => prevTime - 1);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [time, task]);
+
+    // Handle task progress
+    const handleNextStep = async () => {
+        if (step === 0) {
+            setStep(1); // Mark first action as complete
+        } else if (step === 1) {
+            const endTime = Date.now() / 1000;
+            if (task && taskStartTime !== null) {
+                await logTaskTiming(task, taskStartTime, endTime);
+            }
+            setStep(0); // Reset steps for the next task
+            setTask(null); // Clear the task
+            setTime(initialTime); // Reset countdown
+        }
+    };
 
     const buttonRefs = [
         {id: "home", content: "Home", ref: useRef<HTMLButtonElement>(null)},
@@ -20,13 +71,21 @@ function App() {
         {id: "see-more", content: "See more", ref: useRef<HTMLButtonElement>(null)}
     ];
 
+    const tasks: Task[] = [
+        {action1: {actionId: "home", actionName: "Home"}, action2: {actionId: "about", actionName: "About"}},
+        {action1: {actionId: "services", actionName: "Services"}, action2: {actionId: "blog", actionName: "Blog"}},
+        {action1: {actionId: "contact", actionName: "Contact"}, action2: {actionId: "go-up", actionName: "Go up"}},
+        {action1: {actionId: "see-more", actionName: "See more"}, action2: {actionId: "home", actionName: "Home"}}
+    ];
+
     return (
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
             <header className="fixed top-0 left-0 w-full p-4 bg-gray-800 text-white">
                 <div className="w-full flex justify-between items-center">
                     <h1 className="text-2xl font-bold uppercase">Logo</h1>
                     <nav className="flex space-x-4">
-                        <Button ref={buttonRefs[0].ref} variant="link">{buttonRefs[0].content}</Button>
+                        <Button
+                            ref={buttonRefs[0].ref} variant="link" onClick={handleNextStep}>{buttonRefs[0].content}</Button>
                         <Button ref={buttonRefs[1].ref} variant="link">{buttonRefs[1].content}</Button>
                         <Button ref={buttonRefs[2].ref} variant="link">{buttonRefs[2].content}</Button>
                         <Button ref={buttonRefs[3].ref} variant="link">{buttonRefs[3].content}</Button>
@@ -50,7 +109,7 @@ function App() {
                     </Button>
                 </div>
             </div>
-            {showCountdown && <Countdown initialTime={3}/>}
+            <Countdown showCountdown={showCountdown} time={time} task={task} step={step}/>
             <div className="w-full h-screen flex items-center justify-center">
                 <CursorTracker onMove={setCursorData}/>
                 <AimAssist cursorData={cursorData} buttons={buttonRefs}/>
