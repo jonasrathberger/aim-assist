@@ -16,7 +16,6 @@ interface AimAssistProps {
 
 const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) => {
     const [highlightedButton, setHighlightedButton] = useState<string | null>(null);
-    const [predictedPosition, setPredictedPosition] = useState({ x: 0, y: 0 });
     const predictionRef = useRef({ x: 0, y: 0 });
     const lastHighlightedButtonRef = useRef<string | null>(null);
 
@@ -65,11 +64,6 @@ const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) =>
             x: predictionRef.current.x + smoothingFactor * (predictedX - predictionRef.current.x),
             y: predictionRef.current.y + smoothingFactor * (predictedY - predictionRef.current.y)
         };
-
-        setPredictedPosition({
-            x: predictionRef.current.x,
-            y: predictionRef.current.y
-        });
 
         const newHighlightedButton = findHighlightedButton();
         if (newHighlightedButton) {
@@ -143,13 +137,6 @@ const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) =>
 
     return (
         <div className="relative">
-            <div
-                className="fixed w-12 h-12 rounded-full bg-red-500 bg-opacity-50 pointer-events-none z-50"
-                style={{
-                    left: `${predictedPosition.x - 24}px`,
-                    top: `${predictedPosition.y - 24}px`,
-                }}
-            />
             {mode === 'aim-assist' && highlightedButton && (
                 <div
                     className="fixed flex gap-24 items-center z-50 pointer-events-none"
