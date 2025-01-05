@@ -16,7 +16,7 @@ export type Task = {
     action2: Action;
 }
 
-const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect) => {
+const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect, accepted?: boolean) => {
     const logEntry = {
         username,
         mode,
@@ -26,6 +26,7 @@ const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect
         endTime,
         duration: (endTime - startTime).toFixed(2),
         isCorrect,
+        accepted,
     };
 
     try {
@@ -83,16 +84,16 @@ function App() {
     }, [time, task, countdownActive]);
 
     // Handle task progress
-    const handleNextStep = async (clickedActionId) => {
+    const handleNextStep = async (clickedActionId, accepted?: boolean) => {
         const endTime = Date.now() / 1000;
 
         if (task && step === 0) {
             const isCorrect = clickedActionId === task.action1.actionId;
-            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect);
+            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect, accepted);
             if (isCorrect) setStep(1); // Mark first action as complete
         } else if (task && step === 1) {
             const isCorrect = clickedActionId === task.action2.actionId;
-            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect);
+            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect, accepted);
             if (isCorrect) {
                 resetCountdown();
             }
@@ -169,7 +170,7 @@ function App() {
             {(selectedMode === 'aim-assist' || selectedMode === 'aim-guidance') && (
                 <div className="w-full h-screen flex items-center justify-center">
                     <CursorTracker onMove={setCursorData}/>
-                    <AimAssist cursorData={cursorData} buttons={buttonRefs}/>
+                    <AimAssist cursorData={cursorData} buttons={buttonRefs} mode={selectedMode} handleNext={handleNextStep}/>
                 </div>
             )}
         </ThemeProvider>
