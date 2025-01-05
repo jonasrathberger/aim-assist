@@ -4,6 +4,7 @@ import { CursorData } from "@/components/CursorTracker.tsx";
 interface ButtonData {
     id: string;
     ref: React.RefObject<HTMLButtonElement>;
+    variant?: string;
 }
 
 interface AimAssistProps {
@@ -80,11 +81,9 @@ const AimAssist = ({ cursorData, buttons }: AimAssistProps) => {
             const button = ref.current;
             if (button) {
                 if (highlightedButton === id) {
-                    button.classList.add('bg-destructive', 'text-destructive-foreground');
-                    button.classList.remove('bg-primary', 'text-primary-foreground', 'hover:bg-primary/90');
+                    button.classList.add('outline', 'outline-4', 'outline-green-500');
                 } else {
-                    button.classList.remove('bg-destructive', 'text-destructive-foreground');
-                    button.classList.add('bg-primary', 'text-primary-foreground', 'hover:bg-primary/90');
+                    button.classList.remove('outline', 'outline-4', 'outline-green-500');
                 }
             }
         });
@@ -94,8 +93,7 @@ const AimAssist = ({ cursorData, buttons }: AimAssistProps) => {
             buttons.forEach(({ ref }) => {
                 const button = ref.current;
                 if (button) {
-                    button.classList.remove('bg-destructive', 'text-destructive-foreground');
-                    button.classList.add('bg-primary', 'text-primary-foreground', 'hover:bg-primary/90');
+                    button.classList.remove('outline', 'outline-4', 'outline-green-500');
                 }
             });
         };

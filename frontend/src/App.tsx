@@ -4,6 +4,7 @@ import {useEffect, useRef, useState} from "react";
 import Countdown from "@/components/Countdown.tsx";
 import CursorTracker, {CursorData} from "@/components/CursorTracker.tsx";
 import AimAssist from "@/components/AimAssist.tsx";
+import {useParams} from "react-router";
 
 type Action = {
     actionId: string;
@@ -15,13 +16,16 @@ export type Task = {
     action2: Action;
 }
 
-const logTaskTiming = async (task, startTime, endTime) => {
+const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect) => {
     const logEntry = {
+        username,
+        mode,
         action1Name: task.action1.actionName,
         action2Name: task.action2.actionName,
         startTime,
         endTime,
         duration: (endTime - startTime).toFixed(2),
+        isCorrect,
     };
 
     try {
@@ -38,10 +42,16 @@ const logTaskTiming = async (task, startTime, endTime) => {
 };
 
 function App() {
+    const {user} = useParams(); // Get username from route
+    const username = user || localStorage.getItem("username");
+    const {mode} = useParams(); // Get mode from route
+    const selectedMode = mode || localStorage.getItem("mode");
 
     const initialTime = 3;
     const [cursorData, setCursorData] = useState<CursorData>({x: 0, y: 0, vx: 0, vy: 0});
     const [showCountdown, setShowCountdown] = useState(false);
+    const [countdownActive, setCountdownActive] = useState(false);
+    const [countdownFinished, setCountdownFinished] = useState(false);
     const [time, setTime] = useState(initialTime);
     const [task, setTask] = useState<Task | null>(null);
     const [taskStartTime, setTaskStartTime] = useState<number | null>(null);
@@ -49,34 +59,52 @@ function App() {
 
     // Countdown timer
     useEffect(() => {
+        if (!countdownActive) return; // Only run if countdown is active
+
         if (time <= 0 && !task) {
             const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
             setTask(randomTask);
             setTaskStartTime(Date.now() / 1000);
+            setCountdownActive(false); // Stop countdown when task starts
+            setCountdownFinished(true);
         }
 
         if (time <= 0) return;
 
         const interval = setInterval(() => {
-            setTime((prevTime) => prevTime - 1);
+            setTime((prevTime) => {
+                const updatedTime = prevTime - 1;
+                if (updatedTime <= 0) setCountdownFinished(true);
+                return updatedTime;
+            });
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [time, task]);
+    }, [time, task, countdownActive]);
 
     // Handle task progress
-    const handleNextStep = async () => {
-        if (step === 0) {
-            setStep(1); // Mark first action as complete
-        } else if (step === 1) {
-            const endTime = Date.now() / 1000;
-            if (task && taskStartTime !== null) {
-                await logTaskTiming(task, taskStartTime, endTime);
+    const handleNextStep = async (clickedActionId) => {
+        const endTime = Date.now() / 1000;
+
+        if (task && step === 0) {
+            const isCorrect = clickedActionId === task.action1.actionId;
+            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect);
+            if (isCorrect) setStep(1); // Mark first action as complete
+        } else if (task && step === 1) {
+            const isCorrect = clickedActionId === task.action2.actionId;
+            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect);
+            if (isCorrect) {
+                resetCountdown();
             }
-            setStep(0); // Reset steps for the next task
-            setTask(null); // Clear the task
-            setTime(initialTime); // Reset countdown
         }
+    };
+
+    const resetCountdown = () => {
+        setStep(0);
+        setTask(null);
+        setTime(initialTime);
+        setCountdownActive(false);
+        setCountdownFinished(false);
     };
 
     const buttonRefs = [
@@ -101,13 +129,17 @@ function App() {
             <header className="fixed top-0 left-0 w-full p-4 bg-gray-800 text-white">
                 <div className="w-full flex justify-between items-center">
                     <h1 className="text-2xl font-bold uppercase">Logo</h1>
-                    <nav className="flex space-x-4">
-                        <Button
-                            ref={buttonRefs[0].ref} variant="link" onClick={handleNextStep}>{buttonRefs[0].content}</Button>
-                        <Button ref={buttonRefs[1].ref} variant="link">{buttonRefs[1].content}</Button>
-                        <Button ref={buttonRefs[2].ref} variant="link">{buttonRefs[2].content}</Button>
-                        <Button ref={buttonRefs[3].ref} variant="link">{buttonRefs[3].content}</Button>
-                        <Button ref={buttonRefs[4].ref} variant="link">{buttonRefs[4].content}</Button>
+                    <nav className="grid grid-cols-5">
+                        <Button ref={buttonRefs[0].ref} variant="link"
+                                onClick={() => handleNextStep(buttonRefs[0].id)}>{buttonRefs[0].content}</Button>
+                        <Button ref={buttonRefs[1].ref} variant="link"
+                                onClick={() => handleNextStep(buttonRefs[1].id)}>{buttonRefs[1].content}</Button>
+                        <Button ref={buttonRefs[2].ref} variant="link"
+                                onClick={() => handleNextStep(buttonRefs[2].id)}>{buttonRefs[2].content}</Button>
+                        <Button ref={buttonRefs[3].ref} variant="link"
+                                onClick={() => handleNextStep(buttonRefs[3].id)}>{buttonRefs[3].content}</Button>
+                        <Button ref={buttonRefs[4].ref} variant="link"
+                                onClick={() => handleNextStep(buttonRefs[4].id)}>{buttonRefs[4].content}</Button>
                     </nav>
                 </div>
             </header>
@@ -115,23 +147,31 @@ function App() {
                 <div></div>
                 <div
                     className="w-16 h-16 rounded-full bg-gray-500 hover:scale-110 hover:bg-transparent hover:border-2 transition"
-                    onMouseEnter={() => setShowCountdown(true)}
-                    onMouseLeave={() => setShowCountdown(false)}
+                    onMouseEnter={() => {
+                        setShowCountdown(true);
+                        setCountdownActive(true);
+                    }}
+                    onMouseLeave={() => {
+                        if (!countdownFinished) resetCountdown();
+                    }}
                 ></div>
-                <div className="flex flex-col gap-4">
-                    <Button ref={buttonRefs[5].ref}>
-                        {buttonRefs[5].content}
-                    </Button>
-                    <Button ref={buttonRefs[6].ref} variant="outline">
+                <div className="flex flex-row gap-4">
+                    <Button ref={buttonRefs[6].ref} onClick={() => handleNextStep(buttonRefs[6].id)}>
                         {buttonRefs[6].content}
+                    </Button>
+                    <Button ref={buttonRefs[5].ref} variant="secondary"
+                            onClick={() => handleNextStep(buttonRefs[5].id)}>
+                        {buttonRefs[5].content}
                     </Button>
                 </div>
             </div>
             <Countdown showCountdown={showCountdown} time={time} task={task} step={step}/>
-            <div className="w-full h-screen flex items-center justify-center">
-                <CursorTracker onMove={setCursorData}/>
-                <AimAssist cursorData={cursorData} buttons={buttonRefs}/>
-            </div>
+            {(selectedMode === 'aim-assist' || selectedMode === 'aim-guidance') && (
+                <div className="w-full h-screen flex items-center justify-center">
+                    <CursorTracker onMove={setCursorData}/>
+                    <AimAssist cursorData={cursorData} buttons={buttonRefs}/>
+                </div>
+            )}
         </ThemeProvider>
     )
 }
