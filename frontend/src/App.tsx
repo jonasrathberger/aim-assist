@@ -16,7 +16,7 @@ export type Task = {
     action2: Action;
 }
 
-const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect, accepted?: boolean) => {
+const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect, accepted?: boolean, chosenMethod?: string) => {
     const logEntry = {
         username,
         mode,
@@ -27,6 +27,7 @@ const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect
         duration: (endTime - startTime).toFixed(2),
         isCorrect,
         accepted,
+        chosenMethod
     };
 
     try {
@@ -84,16 +85,16 @@ function App() {
     }, [time, task, countdownActive]);
 
     // Handle task progress
-    const handleNextStep = async (clickedActionId, accepted?: boolean) => {
+    const handleNextStep = async (clickedActionId, accepted?: boolean, chosenMethod?: string) => {
         const endTime = Date.now() / 1000;
 
         if (task && step === 0) {
             const isCorrect = clickedActionId === task.action1.actionId;
-            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect, accepted);
+            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect, accepted, chosenMethod);
             if (isCorrect) setStep(1); // Mark first action as complete
         } else if (task && step === 1) {
             const isCorrect = clickedActionId === task.action2.actionId;
-            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect, accepted);
+            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect, accepted, chosenMethod);
             if (isCorrect) {
                 resetCountdown();
             }

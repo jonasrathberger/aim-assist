@@ -24,10 +24,10 @@ app.post('/api/logs', (req, res) => {
 
     // Construct log file path
     const logFileName = path.join(logsDir, `${username}_${mode}_task_log.csv`);
-    const logEntry = `${req.body.action1Name},${req.body.action2Name},${req.body.startTime},${req.body.endTime},${req.body.duration},${req.body.isCorrect},${req.body.accepted}\n`;
+    const logEntry = `${req.body.action1Name},${req.body.action2Name},${req.body.startTime},${req.body.endTime},${req.body.duration},${req.body.isCorrect},${req.body.accepted},${req.body.chosenMethod}\n`;
 
     if (!fs.existsSync(logFileName)) {
-        fs.writeFileSync(logFileName, 'Action1Name,Action2Name,StartTime,EndTime,Duration,Correct,Accepted\n');
+        fs.writeFileSync(logFileName, 'Action1Name,Action2Name,StartTime,EndTime,Duration,Correct,Accepted,Method\n');
     }
 
     fs.appendFileSync(logFileName, logEntry);

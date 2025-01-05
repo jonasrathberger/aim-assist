@@ -11,7 +11,7 @@ interface AimAssistProps {
     cursorData: CursorData;
     buttons: ButtonData[];
     mode: string;
-    handleNext: (id: string, accepted: boolean) => void;
+    handleNext: (id: string, accepted: boolean, method: string) => void;
 }
 
 const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) => {
@@ -105,9 +105,9 @@ const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) =>
         (event: KeyboardEvent) => {
             if (highlightedButton) {
                 if (event.key === "y") {
-                    handleNext(highlightedButton, true);
+                    handleNext(highlightedButton, true, 'keyboard');
                 } else if (event.key === "x") {
-                    handleNext(highlightedButton, false);
+                    handleNext(highlightedButton, false, 'keyboard');
                 }
             }
         },
@@ -119,10 +119,10 @@ const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) =>
             if (highlightedButton) {
                 if (event.button === 0) {
                     // Left click -> Accept
-                    handleNext(highlightedButton, true);
+                    handleNext(highlightedButton, true, 'mouse');
                 } else if (event.button === 2) {
                     // Right click -> Decline
-                    handleNext(highlightedButton, false);
+                    handleNext(highlightedButton, false, 'mouse');
                 }
             }
         },
@@ -160,13 +160,13 @@ const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) =>
                     }}
                 >
                     <Button
-                        onClick={() => handleNext(highlightedButton, true)}
+                        onClick={() => handleNext(highlightedButton, true, 'button')}
                         className="p-2 bg-green-500 text-white rounded-md pointer-events-auto"
                     >
                         <strong>Y</strong> - Accept
                     </Button>
                     <Button
-                        onClick={() => handleNext(highlightedButton, false)}
+                        onClick={() => handleNext(highlightedButton, false, 'button')}
                         className="p-2 bg-red-500 text-white rounded-md pointer-events-auto"
                     >
                         <strong>X</strong> - Decline
