@@ -56,6 +56,7 @@ function App() {
     const [task, setTask] = useState<Task | null>(null);
     const [taskStartTime, setTaskStartTime] = useState<number | null>(null);
     const [step, setStep] = useState<number>(0); // 0 = not started, 1 = first action, 2 = second action
+    const [lastTask, setLastTask] = useState<Task | null>(null);
 
     // Handle task progress
     const handleNextStep = async (clickedActionId) => {
@@ -69,6 +70,7 @@ function App() {
             const isCorrect = clickedActionId === task.action2.actionId;
             await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect);
             if (isCorrect) {
+                setLastTask(task); // Save the last task
                 resetCountdown();
             }
         }
@@ -107,11 +109,13 @@ function App() {
             updatedTasks = tasks;
         }
 
-        const randomIndex = Math.floor(Math.random() * updatedTasks.length);
-        const task = updatedTasks[randomIndex];
+        let task;
+        do {
+            const randomIndex = Math.floor(Math.random() * updatedTasks.length);
+            task = updatedTasks[randomIndex];
+        } while (task === lastTask); // Ensure the new task is not the same as the last task
 
-        setAvailableTasks(updatedTasks.filter((_, index) => index !== randomIndex));
-
+        setAvailableTasks(updatedTasks.filter(t => t !== task));
         return task;
     };
 
