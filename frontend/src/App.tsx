@@ -16,7 +16,7 @@ export type Task = {
     action2: Action;
 }
 
-const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect, accepted?: boolean, chosenMethod?: string) => {
+const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect) => {
     const logEntry = {
         username,
         mode,
@@ -26,8 +26,6 @@ const logTaskTiming = async (task, startTime, endTime, username, mode, isCorrect
         endTime,
         duration: (endTime - startTime).toFixed(2),
         isCorrect,
-        accepted,
-        chosenMethod
     };
 
     try {
@@ -59,42 +57,17 @@ function App() {
     const [taskStartTime, setTaskStartTime] = useState<number | null>(null);
     const [step, setStep] = useState<number>(0); // 0 = not started, 1 = first action, 2 = second action
 
-    // Countdown timer
-    useEffect(() => {
-        if (!countdownActive) return; // Only run if countdown is active
-
-        if (time <= 0 && !task) {
-            const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
-            setTask(randomTask);
-            setTaskStartTime(Date.now() / 1000);
-            setCountdownActive(false); // Stop countdown when task starts
-            setCountdownFinished(true);
-        }
-
-        if (time <= 0) return;
-
-        const interval = setInterval(() => {
-            setTime((prevTime) => {
-                const updatedTime = prevTime - 1;
-                if (updatedTime <= 0) setCountdownFinished(true);
-                return updatedTime;
-            });
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [time, task, countdownActive]);
-
     // Handle task progress
-    const handleNextStep = async (clickedActionId, accepted?: boolean, chosenMethod?: string) => {
+    const handleNextStep = async (clickedActionId) => {
         const endTime = Date.now() / 1000;
 
         if (task && step === 0) {
             const isCorrect = clickedActionId === task.action1.actionId;
-            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect, accepted, chosenMethod);
+            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect);
             if (isCorrect) setStep(1); // Mark first action as complete
         } else if (task && step === 1) {
             const isCorrect = clickedActionId === task.action2.actionId;
-            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect, accepted, chosenMethod);
+            await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect);
             if (isCorrect) {
                 resetCountdown();
             }
@@ -120,18 +93,59 @@ function App() {
     ];
 
     const tasks: Task[] = [
-        {action1: {actionId: "home", actionName: "Home"}, action2: {actionId: "about", actionName: "About"}},
-        {action1: {actionId: "services", actionName: "Services"}, action2: {actionId: "blog", actionName: "Blog"}},
+        {action1: {actionId: "home", actionName: "Home"}, action2: {actionId: "see-more", actionName: "See more"}},
+        {action1: {actionId: "about", actionName: "About"}, action2: {actionId: "services", actionName: "Services"}},
         {action1: {actionId: "contact", actionName: "Contact"}, action2: {actionId: "go-up", actionName: "Go up"}},
-        {action1: {actionId: "see-more", actionName: "See more"}, action2: {actionId: "home", actionName: "Home"}}
+        {action1: {actionId: "see-more", actionName: "See more"}, action2: {actionId: "blog", actionName: "Blog"}}
     ];
+
+    const [availableTasks, setAvailableTasks] = useState<Task[]>(tasks);
+
+    const getRandomTask = () => {
+        let updatedTasks = availableTasks;
+        if (updatedTasks.length === 0) {
+            updatedTasks = tasks;
+        }
+
+        const randomIndex = Math.floor(Math.random() * updatedTasks.length);
+        const task = updatedTasks[randomIndex];
+
+        setAvailableTasks(updatedTasks.filter((_, index) => index !== randomIndex));
+
+        return task;
+    };
+
+    // Countdown timer
+    useEffect(() => {
+        if (!countdownActive) return; // Only run if countdown is active
+
+        if (time <= 0 && !task) {
+            const randomTask = getRandomTask();
+            setTask(randomTask);
+            setTaskStartTime(Date.now() / 1000);
+            setCountdownActive(false); // Stop countdown when task starts
+            setCountdownFinished(true);
+        }
+
+        if (time <= 0) return;
+
+        const interval = setInterval(() => {
+            setTime((prevTime) => {
+                const updatedTime = prevTime - 1;
+                if (updatedTime <= 0) setCountdownFinished(true);
+                return updatedTime;
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [time, task, countdownActive]);
 
     return (
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
             <header className="fixed top-0 left-0 w-full p-4 bg-gray-800 text-white">
                 <div className="w-full flex justify-between items-center">
                     <h1 className="text-2xl font-bold uppercase">Logo</h1>
-                    <nav className="grid grid-cols-5">
+                    <nav className="grid grid-cols-4">
                         <Button ref={buttonRefs[0].ref} variant="link"
                                 onClick={() => handleNextStep(buttonRefs[0].id)}>{buttonRefs[0].content}</Button>
                         <Button ref={buttonRefs[1].ref} variant="link"
@@ -140,9 +154,9 @@ function App() {
                                 onClick={() => handleNextStep(buttonRefs[2].id)}>{buttonRefs[2].content}</Button>
                         <Button ref={buttonRefs[3].ref} variant="link"
                                 onClick={() => handleNextStep(buttonRefs[3].id)}>{buttonRefs[3].content}</Button>
-                        <Button ref={buttonRefs[4].ref} variant="link"
-                                onClick={() => handleNextStep(buttonRefs[4].id)}>{buttonRefs[4].content}</Button>
                     </nav>
+                    <Button ref={buttonRefs[4].ref} variant="default"
+                            onClick={() => handleNextStep(buttonRefs[4].id)}>{buttonRefs[4].content}</Button>
                 </div>
             </header>
             <div className="w-full h-screen flex flex-col items-center justify-between p-8">
@@ -169,7 +183,7 @@ function App() {
             </div>
             <Countdown showCountdown={showCountdown} time={time} task={task} step={step}/>
             {(selectedMode === 'aim-assist' || selectedMode === 'aim-guidance') && (
-                <div className="w-full h-screen flex items-center justify-center">
+                <div className=" fixed top-0 left-0 w-full h-screen flex items-center justify-center pointer-events-none">
                     <CursorTracker onMove={setCursorData}/>
                     <AimAssist cursorData={cursorData} buttons={buttonRefs} mode={selectedMode} handleNext={handleNextStep}/>
                 </div>

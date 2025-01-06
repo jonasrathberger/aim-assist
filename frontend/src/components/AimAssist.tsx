@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { CursorData } from "@/components/CursorTracker.tsx";
-import {Button} from "@/components/ui/button.tsx";
 
 interface ButtonData {
     id: string;
@@ -11,10 +10,10 @@ interface AimAssistProps {
     cursorData: CursorData;
     buttons: ButtonData[];
     mode: string;
-    handleNext: (id: string, accepted: boolean, method: string) => void;
+    handleNext: (id: string) => void;
 }
 
-const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) => {
+const AimAssist = ({ cursorData, buttons, handleNext }: AimAssistProps) => {
     const [highlightedButton, setHighlightedButton] = useState<string | null>(null);
     const predictionRef = useRef({ x: 0, y: 0 });
     const lastHighlightedButtonRef = useRef<string | null>(null);
@@ -98,25 +97,9 @@ const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) =>
     const handleKeyPress = useCallback(
         (event: KeyboardEvent) => {
             if (highlightedButton) {
-                if (event.key === "y") {
-                    handleNext(highlightedButton, true, 'keyboard');
-                } else if (event.key === "x") {
-                    handleNext(highlightedButton, false, 'keyboard');
-                }
-            }
-        },
-        [highlightedButton, handleNext]
-    );
-
-    const handleMouseClick = useCallback(
-        (event: MouseEvent) => {
-            if (highlightedButton) {
-                if (event.button === 0) {
-                    // Left click -> Accept
-                    handleNext(highlightedButton, true, 'mouse');
-                } else if (event.button === 2) {
-                    // Right click -> Decline
-                    handleNext(highlightedButton, false, 'mouse');
+                if (event.key === " ") {
+                    event.preventDefault();
+                    handleNext(highlightedButton);
                 }
             }
         },
@@ -125,43 +108,12 @@ const AimAssist = ({ cursorData, buttons, mode, handleNext }: AimAssistProps) =>
 
     useEffect(() => {
         window.addEventListener("keydown", handleKeyPress);
-        window.addEventListener("mousedown", handleMouseClick);
-        const disableContextMenu = (e: MouseEvent) => e.preventDefault();
-        window.addEventListener("contextmenu", disableContextMenu);
         return () => {
             window.removeEventListener("keydown", handleKeyPress);
-            window.removeEventListener("mousedown", handleMouseClick);
-            window.removeEventListener("contextmenu", disableContextMenu);
         };
     }, [handleKeyPress]);
 
-    return (
-        <div className="relative">
-            {mode === 'aim-assist' && highlightedButton && (
-                <div
-                    className="fixed flex gap-24 items-center z-50 pointer-events-none"
-                    style={{
-                        left: '50%',
-                        top: '50%',
-                        transform: 'translate(-50%, -100%)',
-                    }}
-                >
-                    <Button
-                        onClick={() => handleNext(highlightedButton, true, 'button')}
-                        className="p-2 bg-green-500 text-white rounded-md pointer-events-auto"
-                    >
-                        <strong>Y</strong> - Accept
-                    </Button>
-                    <Button
-                        onClick={() => handleNext(highlightedButton, false, 'button')}
-                        className="p-2 bg-red-500 text-white rounded-md pointer-events-auto"
-                    >
-                        <strong>X</strong> - Decline
-                    </Button>
-                </div>
-            )}
-        </div>
-    );
+    return <></>
 };
 
 export default React.memo(AimAssist);
