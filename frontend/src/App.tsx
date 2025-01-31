@@ -58,6 +58,8 @@ function App() {
     const [step, setStep] = useState<number>(0); // 0 = not started, 1 = first action, 2 = second action
     const [lastTask, setLastTask] = useState<Task | null>(null);
 
+    const [completedTaskCount, setCompletedTaskCount] = useState<number>(0);
+
     // Handle task progress
     const handleNextStep = async (clickedActionId) => {
         const endTime = Date.now() / 1000;
@@ -70,6 +72,7 @@ function App() {
             const isCorrect = clickedActionId === task.action2.actionId;
             await logTaskTiming(task, taskStartTime, endTime, username, selectedMode, isCorrect);
             if (isCorrect) {
+                setCompletedTaskCount((prevCount) => prevCount + 1);
                 setLastTask(task); // Save the last task
                 resetCountdown();
             }
@@ -163,6 +166,7 @@ function App() {
                             onClick={() => handleNextStep(buttonRefs[4].id)}>{buttonRefs[4].content}</Button>
                 </div>
             </header>
+            <p className="fixed bottom-2 left-2">{completedTaskCount}</p>
             <div className="w-full h-screen flex flex-col items-center justify-between p-8">
                 <div></div>
                 <div
